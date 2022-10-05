@@ -1,0 +1,116 @@
+Option Explicit
+
+Sub ticker()
+    Dim ws As Worksheet
+    Dim tickername As String
+    Dim tickerrow As Double
+    Dim last_row_data As Double
+    Dim open_price As Double
+    Dim close_price As Double
+    Dim volume As Double
+    Dim last_row_results As Double
+    Dim y_open As Double
+    Dim y_close As Double
+    Dim yearly_change As Double
+    Dim percent_change As Double
+    Dim max_p As Double
+    Dim min_p As Double
+    Dim max_vol As Double
+    
+    
+
+tickerrow = 1
+
+
+    For Each ws In Worksheets
+        ' activate the work sheet
+        ws.Activate
+        
+        ' determine the last row for ticker data
+        last_row_data = ws.Cells(Rows.Count, 1).End(xlUp).Row
+        
+        ' set counter for the empty row for results to print to
+        last_row_results = 2
+        
+        ' set counter for the current ticker row
+        tickerrow = 2
+        
+        ' set counter for volume
+        volume = 0
+        
+        ' label the result columns
+        ws.Cells(1, "I").Value = "Ticker"
+        ws.Cells(1, "J").Value = "Yearly Change"
+        ws.Cells(1, "K").Value = "Percent Change"
+        ws.Cells(1, "L").Value = "Total Stock Volume"
+            
+            
+            ' cycle through each ticker row
+            For tickerrow = 2 To last_row_data
+                tickername = Cells(tickerrow, "A").Value
+                
+                ' determine if this is the first row of a new ticker
+                If tickername <> ws.Cells(tickerrow - 1, "A").Value Then
+                    ws.Cells(last_row_results, "I") = ws.Cells(tickerrow, "A").Value 'Ticker
+                    y_open = ws.Cells(tickerrow, "C").Value 'Open
+                    volume = ws.Cells(tickerrow, "G").Value
+                
+                ' determine if this is the middle row of a ticker
+                ElseIf tickername = ws.Cells(tickerrow - 1, "A").Value And tickername = ws.Cells(tickerrow + 1, "A").Value Then
+                    volume = volume + Cells(tickerrow, "G").Value
+                
+                ' options for if it is the last row of a ticker
+                Else
+                    y_close = ws.Cells(tickerrow, "F").Value
+                    volume = volume + Cells(tickerrow, "G").Value
+                    ws.Cells(last_row_results, "L") = volume ' Volume
+                    yearly_change = y_close - y_open
+                    ws.Cells(last_row_results, "J") = yearly_change
+                    percent_change = ((yearly_change) / y_open) '* 100
+                    ws.Cells(last_row_results, "K") = FormatPercent(percent_change)
+                    
+' BONUS conditional formatting
+                    If Cells(last_row_results, "J").Value < 0 Then
+                        Cells(last_row_results, "J").Interior.ColorIndex = 3
+                    Else
+                        Cells(last_row_results, "J").Interior.ColorIndex = 4
+                    End If
+                    
+                    last_row_results = last_row_results + 1
+                
+                End If
+
+            
+            Next tickerrow
+
+
+' BONUS max/min/max
+            ' name the result columns
+            ws.Cells(1, "P").Value = "Ticker"
+            ws.Cells(1, "Q").Value = "Value"
+            ws.Cells(2, "O").Value = "Greatest % Increase"
+            ws.Cells(3, "O").Value = "Greatest % Decrease"
+            ws.Cells(4, "O").Value = "Greatest Total Volume"
+            
+            ' find max, min, max values
+            ws.Cells(2, "Q").Value = FormatPercent(Application.WorksheetFunction.Max(Range("K:K")))
+            ws.Cells(3, "Q").Value = FormatPercent(Application.WorksheetFunction.Min(Range("K:K")))
+            ws.Cells(4, "Q").Value = Application.WorksheetFunction.Max(Range("L:L"))
+
+            ' assign max/min/max values to a variable to shorten code below
+            max_p = ws.Cells(2, "Q").Value
+            min_p = ws.Cells(3, "Q").Value
+            max_vol = ws.Cells(4, "Q").Value
+            
+            ws.Cells(2, "P").Value = Application.WorksheetFunction.XLookup(max_p, Range("K:K"), Range("I:I"))
+            ws.Cells(3, "P").Value = Application.WorksheetFunction.XLookup(min_p, Range("K:K"), Range("I:I"))
+            ws.Cells(4, "P").Value = Application.WorksheetFunction.XLookup(max_vol, Range("L:L"), Range("I:I"))
+            
+            
+        Next ws
+
+
+End Sub
+
+
+
